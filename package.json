@@ -1,0 +1,36 @@
+{
+  "name": "ein-bridge-publisher",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "types": "wrangler types src/worker-configuration.d.ts",
+    "typecheck": "npm run types && tsc --noEmit",
+    "dry-run": "wrangler deploy --dry-run --outdir dist",
+    "check": "npm run typecheck && npm run dry-run",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3",
+    "wrangler": "4.112.0"
+  },
+  "cloudflare": {
+    "bindings": {
+      "GOOGLE_CLIENT_ID": {
+        "description": "Google Cloud Console で作成した Web application の OAuth Client ID。"
+      },
+      "SESSION_SECRET": {
+        "description": "64文字以上のランダムな秘密文字列。パスワード管理アプリで生成してください。"
+      },
+      "ADMIN_HOST": {
+        "description": "管理画面のホスト名。例: publisher.ein-8.com"
+      },
+      "PUBLIC_HOST": {
+        "description": "公開資料のホスト名。例: docs.ein-8.com"
+      },
+      "ADMIN_EMAIL": {
+        "description": "ログインを許可するGoogleアカウント。既定値: koube201@gmail.com"
+      }
+    }
+  }
+}

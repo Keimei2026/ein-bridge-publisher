@@ -1,0 +1,4 @@
+Copyright (c) 2026 Ein Bridge. All rights reserved.
+
+This source repository may be made public solely to deploy and operate Ein Bridge Publisher.
+No warranty is provided. Redistribution or commercial resale requires permission from Ein Bridge.

@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "ein-bridge-publisher",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-18",
+  "vars": {
+    "ADMIN_EMAIL": "koube201@gmail.com",
+    "ADMIN_HOST": "publisher.ein-8.com",
+    "PUBLIC_HOST": "docs.ein-8.com",
+    "GOOGLE_CLIENT_ID": "REPLACE_DURING_DEPLOY"
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "CATALOG", "class_name": "CatalogDO" },
+      { "name": "SITES", "class_name": "SiteDO" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["CatalogDO", "SiteDO"] }
+  ],
+  "observability": { "enabled": true }
+}
