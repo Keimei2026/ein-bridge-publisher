@@ -1,6 +1,6 @@
 {
   "name": "ein-bridge-publisher",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,10 @@
     "typecheck": "npm run types && tsc --noEmit",
     "dry-run": "wrangler deploy --dry-run --outdir dist",
     "check": "npm run typecheck && npm run dry-run",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "syntax": "tsc --noEmit --noCheck --target ES2022 --module ESNext src/*.ts",
+    "static-audit": "node scripts-static-audit.mjs",
+    "preflight": "npm run syntax && npm run static-audit"
   },
   "devDependencies": {
     "typescript": "5.8.3",

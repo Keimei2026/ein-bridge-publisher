@@ -49,7 +49,7 @@ export async function createSession(payload: Omit<SessionPayload, "iat" | "exp">
 }
 
 export async function verifySession(token: string | undefined, secret: string): Promise<SessionPayload | null> {
-  if (!token || !secret || secret.length < 32) return null;
+  if (!token || !secret || secret.length < 64) return null;
   const [encoded, signaturePart, extra] = token.split(".");
   if (!encoded || !signaturePart || extra) return null;
   try {

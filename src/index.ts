@@ -343,23 +343,30 @@ async function handlePublic(request: Request, env: Env): Promise<Response> {
     const metaPayload = await metaResponse.json<{ site: SiteSummary }>();
     const site = metaPayload.site;
     if (site.deletedAt || !site.currentRevision) return text("このページは公開されていません。", 404);
-    const revisionResponse = await siteStub(env, slug).fetch(`http://site/revision-meta/${encodeURIComponent(site.currentRevision)}`);
+    const location = `/p/${encodeURIComponent(slug)}/r/${encodeURIComponent(site.currentRevision)}`;
+    const headers = new Headers({ location, "cache-control": "no-store" });
+    secureHeaders(headers);
+    return new Response(null, { status: 302, headers });
+  }
+
+  const revisionPage = url.pathname.match(/^\/p\/([a-z0-9-]+)\/r\/([^/]+)\/?$/);
+  if (request.method === "GET" && revisionPage) {
+    const slug = revisionPage[1]!;
+    const revisionId = decodeURIComponent(revisionPage[2]!);
+    const metaResponse = await siteStub(env, slug).fetch("http://site/meta");
+    if (!metaResponse.ok) return text("このページは存在しません。", 404);
+    const metaPayload = await metaResponse.json<{ site: SiteSummary }>();
+    if (metaPayload.site.deletedAt) return text("このページは公開されていません。", 404);
+    const revisionResponse = await siteStub(env, slug).fetch(`http://site/revision-meta/${encodeURIComponent(revisionId)}`);
     if (!revisionResponse.ok) return text("このページは存在しません。", 404);
     const revisionPayload = await revisionResponse.json<{ revision: { title: string; mode: PublicationMode } }>();
-    const contentPath = `/p/${encodeURIComponent(slug)}/content/${encodeURIComponent(site.currentRevision)}`;
+    const contentPath = `/p/${encodeURIComponent(slug)}/content/${encodeURIComponent(revisionId)}`;
     const headers = new Headers({
-      "cache-control": "no-store",
+      "cache-control": "public,max-age=31536000,immutable",
       "cross-origin-resource-policy": "same-origin"
     });
     secureHeaders(headers, "default-src 'none'; frame-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'");
     return html(publicWrapper(revisionPayload.revision.title, contentPath, revisionPayload.revision.mode), 200, headers);
-  }
-
-  const obsoleteRevisionPath = url.pathname.match(/^\/p\/([a-z0-9-]+)\/r\/[^/]+\/?$/);
-  if (request.method === "GET" && obsoleteRevisionPath) {
-    const headers = new Headers({ location: `/p/${encodeURIComponent(obsoleteRevisionPath[1]!)}`, "cache-control": "no-store" });
-    secureHeaders(headers);
-    return new Response(null, { status: 302, headers });
   }
 
   const content = url.pathname.match(/^\/p\/([a-z0-9-]+)\/content\/([^/]+)$/);
@@ -369,7 +376,7 @@ async function handlePublic(request: Request, env: Env): Promise<Response> {
     const metaResponse = await siteStub(env, slug).fetch("http://site/meta");
     if (!metaResponse.ok) return text("Not found", 404);
     const metaPayload = await metaResponse.json<{ site: SiteSummary }>();
-    if (metaPayload.site.deletedAt || metaPayload.site.currentRevision !== revisionId) return text("Not found", 404);
+    if (metaPayload.site.deletedAt) return text("Not found", 404);
     const response = await siteStub(env, slug).fetch(`http://site/revision/${encodeURIComponent(revisionId)}`);
     if (!response.ok) return response;
     const mode = response.headers.get("x-revision-mode") === "interactive" ? "interactive" : "static";
@@ -378,7 +385,7 @@ async function handlePublic(request: Request, env: Env): Promise<Response> {
     headers.delete("x-revision-mode");
     headers.delete("x-revision-id");
     headers.delete("x-revision-size");
-    headers.set("cache-control", "no-store");
+    headers.set("cache-control", "public,max-age=31536000,immutable");
     headers.set("cross-origin-resource-policy", "same-origin");
     secureHeaders(headers, mode === "interactive" ? INTERACTIVE_CSP : STATIC_CSP);
     return new Response(response.body, { status: 200, headers });
