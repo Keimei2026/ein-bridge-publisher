@@ -1,6 +1,6 @@
 {
   "name": "ein-bridge-publisher",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,10 @@
     "deploy": "wrangler deploy",
     "syntax": "tsc --noEmit --noCheck --target ES2022 --module ESNext src/*.ts",
     "static-audit": "node scripts-static-audit.mjs",
-    "preflight": "npm run syntax && npm run static-audit"
+    "preflight": "npm run syntax && npm run static-audit && npm run gateway-audit && npm run gateway-unit",
+    "test": "npm run preflight && npm run check",
+    "gateway-audit": "node scripts-gateway-audit.mjs",
+    "gateway-unit": "node scripts-gateway-unit.mjs"
   },
   "devDependencies": {
     "typescript": "5.8.3",
@@ -23,7 +26,7 @@
         "description": "Google Cloud Console で作成した Web application の OAuth Client ID。"
       },
       "SESSION_SECRET": {
-        "description": "64文字以上のランダムな秘密文字列。パスワード管理アプリで生成してください。"
+        "description": "任意。未設定時はDurable Object内で安全なランダム鍵を自動生成します。"
       },
       "ADMIN_HOST": {
         "description": "管理画面のホスト名。例: publisher.ein-8.com"

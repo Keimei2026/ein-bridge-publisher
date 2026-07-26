@@ -35,6 +35,11 @@ export class CatalogDO extends DurableObject<Env> {
         created_at INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log(created_at DESC);
+      CREATE TABLE IF NOT EXISTS app_secrets (
+        name TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      );
     `);
   }
 
@@ -107,6 +112,27 @@ export class CatalogDO extends DurableObject<Env> {
           Date.now()
         );
         return json({ ok: true });
+      }
+
+
+      if (request.method === "GET" && url.pathname === "/secret/session") {
+        let row = this.ctx.storage.sql.exec<{ value: string }>(
+          `SELECT value FROM app_secrets WHERE name='session'`
+        ).toArray()[0];
+        if (!row) {
+          const bytes = new Uint8Array(48);
+          crypto.getRandomValues(bytes);
+          let binary = "";
+          for (const byte of bytes) binary += String.fromCharCode(byte);
+          const value = btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+          this.ctx.storage.sql.exec(
+            `INSERT INTO app_secrets(name,value,created_at) VALUES('session',?,?)`,
+            value,
+            Date.now()
+          );
+          row = { value };
+        }
+        return json({ value: row.value });
       }
 
       if (request.method === "GET" && url.pathname === "/audit") {

@@ -1,46 +1,30 @@
-# Deploy Checklist
+# RC5 deployment checklist
 
-## A. Google Cloud
+## Already complete
 
-- [ ] Google Cloud projectを作成または選択
-- [ ] Google Auth PlatformのBrandingを設定
-- [ ] OAuth Client typeをWeb applicationで作成
-- [ ] Authorized JavaScript originsに `https://publisher.ein-8.com` を追加
-- [ ] Testingの場合、Test usersへ `koube201@gmail.com` を追加
-- [ ] Client IDを控える
+- [x] GitHub repository connected to Cloudflare Workers Builds
+- [x] Worker deployed as `ein-bridge-publisher`
+- [x] Durable Objects created
+- [x] Google OAuth Web Client created
+- [x] `koube201@gmail.com` added as a test user
+- [x] `https://publisher.ein-8.com` added as an authorized JavaScript origin
 
-## B. GitHub
+## Next human actions
 
-- [ ] 新しい公開リポジトリを作成
-- [ ] ZIPそのものではなく、展開したフォルダの中身をアップロード
-- [ ] `.dev.vars`や秘密情報が入っていないことを確認
-- [ ] リポジトリURLを控える
-
-## C. Deploy to Cloudflare
-
-- [ ] リポジトリURLをDeploy URLへ指定
-- [ ] `ADMIN_EMAIL = koube201@gmail.com`
-- [ ] `ADMIN_HOST = publisher.ein-8.com`
-- [ ] `PUBLIC_HOST = docs.ein-8.com`
-- [ ] `GOOGLE_CLIENT_ID`を入力
-- [ ] `SESSION_SECRET`を入力
-- [ ] Workerと2つのSQLite Durable Object namespaceが作成されたことを確認
-- [ ] `/health`が `configured: true` を返すことを確認
-
-## D. Custom Domain
-
-- [ ] 対象Workerへ `publisher.ein-8.com` をCustom Domainとして追加
-- [ ] 同じWorkerへ `docs.ein-8.com` をCustom Domainとして追加
-- [ ] 両方のHTTPS証明書がActive
-
-## E. 本番スモークテスト
-
-- [ ] `koube201@gmail.com`でログインできる
-- [ ] 別のGoogleアカウントが拒否される
-- [ ] 100KB程度の静的HTMLを公開できる
-- [ ] 固定URLをLINEで開ける
-- [ ] 同じslugで更新してURLが変わらない
-- [ ] 履歴から元の版へ戻せる
-- [ ] 削除後に404となる
-- [ ] 復元後に再び表示される
-- [ ] iPadまたはスマートフォンからアップロードできる
+1. Upload all RC5 files to the GitHub repository root and commit.
+2. Confirm the existing Worker build succeeds automatically.
+3. Create a Cloudflare Pages project from the same GitHub repository:
+   - Project name: `ein-bridge-publisher-gateway`
+   - Production branch: `main`
+   - Root directory: `gateway`
+   - Build command: leave blank
+   - Build output directory: `public`
+4. Confirm the Pages deployment succeeds and the Service Binding named
+   `PUBLISHER` points to Worker `ein-bridge-publisher`.
+5. In the Pages project, add these custom domains:
+   - `publisher.ein-8.com`
+   - `docs.ein-8.com`
+6. In Xserver DNS, add exactly these records:
+   - CNAME `publisher` -> `ein-bridge-publisher-gateway.pages.dev`
+   - CNAME `docs` -> `ein-bridge-publisher-gateway.pages.dev`
+7. Wait for TLS activation, then test Google login and publish a sample HTML file.

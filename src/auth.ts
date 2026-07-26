@@ -68,9 +68,9 @@ export async function verifySession(token: string | undefined, secret: string): 
   }
 }
 
-export async function sessionFromRequest(request: Request, env: Env): Promise<SessionPayload | null> {
+export async function sessionFromRequest(request: Request, env: Env, secret: string): Promise<SessionPayload | null> {
   const cookies = parseCookies(request);
-  const session = await verifySession(cookies[SESSION_COOKIE], env.SESSION_SECRET);
+  const session = await verifySession(cookies[SESSION_COOKIE], secret);
   if (!session || session.email.toLowerCase() !== env.ADMIN_EMAIL.toLowerCase()) return null;
   return session;
 }
@@ -93,10 +93,9 @@ export function verifyCsrf(request: Request, session?: SessionPayload | null): b
   return !session || session.csrf === header;
 }
 
-export function verifyAdminOrigin(request: Request, env: Env): boolean {
+export function verifyAdminOrigin(request: Request): boolean {
   const origin = request.headers.get("origin");
-  const protocol = new URL(request.url).protocol;
-  return origin === `${protocol}//${env.ADMIN_HOST}`;
+  return origin === new URL(request.url).origin;
 }
 
 export function sessionCookies(token: string, csrf: string): string[] {

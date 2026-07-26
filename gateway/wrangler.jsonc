@@ -1,0 +1,12 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "ein-bridge-publisher-gateway",
+  "pages_build_output_dir": "./public",
+  "compatibility_date": "2026-07-26",
+  "services": [
+    {
+      "binding": "PUBLISHER",
+      "service": "ein-bridge-publisher"
+    }
+  ]
+}

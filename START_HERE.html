@@ -3,166 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ein Bridge Publisher — 迷わない初回導入手順</title>
+<title>Ein Bridge Publisher RC5</title>
 <style>
-:root{
-  --navy:#17324d;--blue:#176a8d;--bg:#eef3f5;--line:#d7e1e6;
-  --must:#8d2635;--recommended:#176a8d;--optional:#5f6e78;--ok:#267a55;
-  font-family:system-ui,-apple-system,"Segoe UI","Noto Sans JP",sans-serif;
-  color:#17273a;background:var(--bg);line-height:1.7
-}
-*{box-sizing:border-box}body{margin:0}.hero{background:var(--navy);color:white;padding:34px 18px}
-.hero>div,main{max-width:930px;margin:auto}.hero h1{font-size:clamp(27px,5vw,43px);margin:0}
-.hero p{margin:8px 0 0;color:#d2dee5}.hero .sub{font-size:14px}
-main{padding:20px 13px 70px}.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:22px;margin:15px 0;box-shadow:0 10px 30px #17324d0c}
-h2{margin:0 0 12px;font-size:23px}h3{margin:22px 0 8px}.lead{font-size:18px}
-.step{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--blue);color:#fff;font-weight:900;margin-right:9px}
-.badge{display:inline-block;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:850;vertical-align:middle;margin-left:5px}
-.must{background:#fde9ec;color:var(--must)}.recommended{background:#e7f2f6;color:var(--recommended)}.optional{background:#edf0f2;color:var(--optional)}
-.answer{background:#f3f7f9;border:1px solid #d5e1e6;border-radius:11px;padding:13px 14px;margin:9px 0}
-.answer strong{display:block;color:var(--navy)}code,.mono{font-family:ui-monospace,Consolas,monospace}
-code{background:#edf3f5;border-radius:6px;padding:2px 6px;word-break:break-all}
-table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border-bottom:1px solid #dbe4e8;text-align:left;padding:10px 8px;vertical-align:top}th{background:#f4f7f8}
-.note{border-left:5px solid #d19a37;background:#fff9e9}.danger{border-left:5px solid var(--must);background:#fff1f3}.success{border-left:5px solid var(--ok);background:#edf9f3}
-.check{display:flex;gap:10px;align-items:flex-start;margin:10px 0}.box{width:21px;height:21px;border:2px solid #81929d;border-radius:4px;flex:none;margin-top:3px}
-.buttons{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}button{border:0;border-radius:9px;padding:11px 15px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer}
-.secondary{background:#e8f1f4;color:var(--navy)}input{width:100%;padding:12px;border:1px solid #aebfc9;border-radius:9px;font:inherit}
-.small{font-size:13px;color:#617282}.do-not{font-weight:800;color:var(--must)}
-ol li{margin:9px 0}.sticky{position:sticky;bottom:10px;background:#17324df2;color:#fff;border-radius:14px;padding:12px 16px;box-shadow:0 8px 25px #0003}
-@media(max-width:650px){.buttons>*{width:100%}table{font-size:14px}.card{padding:18px}}
-@media print{.sticky,.buttons{display:none}.card{break-inside:avoid;box-shadow:none}body{background:#fff}}
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;max-width:880px;margin:40px auto;padding:0 20px;line-height:1.75;color:#17202a}h1{font-size:30px}h2{margin-top:32px}code,pre{background:#f3f5f7;border-radius:6px}code{padding:2px 5px}pre{padding:16px;overflow:auto}.ok{border-left:5px solid #198754;padding:12px 16px;background:#f2fbf6}.no{border-left:5px solid #b42318;padding:12px 16px;background:#fff5f4}
 </style>
 </head>
 <body>
-<header class="hero"><div>
-<h1>Ein Bridge Publisher</h1>
-<p>考えなくてよい「初回導入手順」</p>
-<p class="sub">各項目に、必須・推奨・変更可を明記しています。</p>
-</div></header>
-<main>
-
-<section class="card success">
-<strong>この手順では、迷ったら青い「推奨」の値をそのまま入力してください。</strong><br>
-変更できる項目もありますが、初回は変更しない方が安全です。正常に公開できてから、必要な箇所だけ変えます。
-</section>
-
-<section class="card">
-<h2>記号の意味</h2>
-<table>
-<tr><th>表示</th><th>意味</th><th>あなたがすること</th></tr>
-<tr><td><span class="badge must">必須</span></td><td>この方式で進めるなら条件を守る必要があります。</td><td>記載どおりにします。</td></tr>
-<tr><td><span class="badge recommended">推奨</span></td><td>別の値でも動きますが、今回はこの値が最も分かりやすいです。</td><td>原則、そのまま使います。</td></tr>
-<tr><td><span class="badge optional">変更可</span></td><td>好みで変更できます。機能への影響は小さいです。</td><td>初回は変更しなくて構いません。</td></tr>
-</table>
-</section>
-
-<section class="card">
-<h2><span class="step">1</span>GitHubの新しい保管場所を作る</h2>
-<p class="lead">GitHubの「New repository」画面で、次のとおり入力します。</p>
-
-<div class="answer"><strong>Owner <span class="badge recommended">推奨</span></strong>自分のGitHubアカウントを選択</div>
-<div class="answer"><strong>Repository name <span class="badge optional">変更可</span></strong><code>ein-bridge-publisher</code></div>
-<div class="answer"><strong>Description <span class="badge optional">変更可</span></strong><code>Ein Bridge Publisher deployment source</code></div>
-<div class="answer"><strong>Visibility <span class="badge must">必須</span></strong><code>Public</code></div>
-<div class="answer"><strong>Add a README file <span class="badge recommended">推奨</span></strong>チェックしない</div>
-<div class="answer"><strong>Add .gitignore <span class="badge recommended">推奨</span></strong><code>None</code></div>
-<div class="answer"><strong>Choose a license <span class="badge recommended">推奨</span></strong><code>None</code></div>
-
-<p><button onclick="copyText('ein-bridge-publisher',this)">リポジトリ名をコピー</button></p>
-
-<div class="card note">
-<strong>なぜPublicなの？</strong><br>
-今回使う「Deploy to Cloudflare」方式では、配布元リポジトリがPublicであることが必要です。
-コードだけを置き、管理パスワード、Googleの秘密情報、公開する資料HTMLは置きません。
-</div>
-
-<div class="card danger">
-<strong>ここではしないこと</strong><br>
-<span class="do-not">ZIPファイルを1個だけアップロードしない。</span><br>
-<span class="do-not">パスワードやSESSION_SECRETをGitHubへ書かない。</span>
-</div>
-</section>
-
-<section class="card">
-<h2><span class="step">2</span>プロジェクトの中身をGitHubへ入れる</h2>
-<ol>
-<li>GitHubで、今作った <code>ein-bridge-publisher</code> を開きます。</li>
-<li><strong>uploading an existing file</strong> または <strong>Add file → Upload files</strong> を押します。</li>
-<li>ダウンロードしたZIPを「すべて展開」します。</li>
-<li>展開したフォルダを開き、<strong>中にあるファイルとフォルダを全部</strong>アップロード欄へドラッグします。</li>
-<li>Commit messageは下の値を使います。</li>
-</ol>
-
-<div class="answer"><strong>Commit message <span class="badge optional">変更可</span></strong><code>Initial Ein Bridge Publisher setup</code></div>
-<div class="answer"><strong>Commit先 <span class="badge recommended">推奨</span></strong><code>Commit directly to the main branch</code></div>
-<p><button onclick="copyText('Initial Ein Bridge Publisher setup',this)">Commit messageをコピー</button></p>
-
-<div class="card danger">
-<strong>アップロード後に確認するもの</strong><br>
-GitHubの最初の画面に、少なくとも次が直接見えていること。
-<ul>
-<li><code>package.json</code></li>
-<li><code>wrangler.jsonc</code></li>
-<li><code>src</code> フォルダ</li>
-</ul>
-これらが、さらに同名の外側フォルダの中へ入っている状態は不可です。
-</div>
-</section>
-
-<section class="card">
-<h2><span class="step">3</span>作ったGitHubのURLを確認する</h2>
-<p>URLは次の形になります。</p>
-<div class="answer"><code>https://github.com/あなたのGitHub名/ein-bridge-publisher</code></div>
-<p>このURLをChatGPTへ貼ってください。ここから先のCloudflare画面を、表示内容に合わせて1画面ずつ案内します。</p>
-<div class="card success"><strong>この段階では、Google Cloudの設定やSecret作成を先にしなくて大丈夫です。</strong></div>
-</section>
-
-<section class="card">
-<h2>この先で使う値：今は入力しない</h2>
-<p>後の画面で迷わないように、採用値だけ先に示します。</p>
-<table>
-<tr><th>項目</th><th>採用値</th><th>変更可否</th></tr>
-<tr><td>Cloudflare Worker name</td><td><code>ein-bridge-publisher</code></td><td><span class="badge optional">変更可</span><br>初回は変更しない</td></tr>
-<tr><td>Cloudflare側の新しいRepository name</td><td><code>ein-bridge-publisher-cloudflare</code></td><td><span class="badge optional">変更可</span><br>元のGitHub名との重複回避用</td></tr>
-<tr><td>管理者メール</td><td><code>koube201@gmail.com</code></td><td><span class="badge must">固定</span></td></tr>
-<tr><td>管理画面URL</td><td><code>publisher.ein-8.com</code></td><td><span class="badge recommended">推奨固定</span></td></tr>
-<tr><td>公開資料URL</td><td><code>docs.ein-8.com</code></td><td><span class="badge recommended">推奨固定</span></td></tr>
-<tr><td>Google Cloud project name</td><td><code>Ein Bridge Publisher</code></td><td><span class="badge optional">変更可</span></td></tr>
-<tr><td>OAuth client name</td><td><code>Ein Bridge Publisher Web</code></td><td><span class="badge optional">変更可</span></td></tr>
-<tr><td>OAuth application type</td><td><code>Web application</code></td><td><span class="badge must">必須</span></td></tr>
-<tr><td>Authorized JavaScript origin</td><td><code>https://publisher.ein-8.com</code></td><td><span class="badge must">必須</span></td></tr>
-<tr><td>SESSION_SECRET</td><td>後の手順で自動生成</td><td><span class="badge must">秘密</span><br>GitHubへ置かない</td></tr>
-</table>
-</section>
-
-<section class="card note">
-<h2>別の方法に変えてもよい？</h2>
-<p><strong>技術的には変えられます。</strong>ただし、今は次の標準ルートに固定します。</p>
-<p><code>GitHubへコードを置く → Deploy to Cloudflare → Googleログイン設定 → 独自ドメイン接続</code></p>
-<p>GitHub Desktop、npm、BAT、R2、Cloudflare Accessなどを使う別ルートもありますが、今回は使いません。途中で別方式へ変えると、手順と検証条件が変わるためです。</p>
-</section>
-
-<section class="card">
-<h2>今回、あなたが考える項目</h2>
-<p><strong>ありません。</strong>初回は、上に書いた推奨値をそのまま入力します。</p>
-<div class="check"><span class="box"></span><span>GitHubアカウントへログインする</span></div>
-<div class="check"><span class="box"></span><span>Repository nameに <code>ein-bridge-publisher</code> と入力する</span></div>
-<div class="check"><span class="box"></span><span>Publicを選ぶ</span></div>
-<div class="check"><span class="box"></span><span>README・.gitignore・licenseは追加しない</span></div>
-<div class="check"><span class="box"></span><span>フォルダの中身を全部アップロードする</span></div>
-<div class="check"><span class="box"></span><span>作成後のGitHub URLをChatGPTへ送る</span></div>
-</section>
-
-<div class="sticky"><strong>今すること：</strong>GitHubで <code>ein-bridge-publisher</code> というPublicリポジトリを作る。</div>
-</main>
-<script>
-async function copyText(text,button){
-  try{
-    await navigator.clipboard.writeText(text);
-    const old=button.textContent; button.textContent='コピーしました';
-    setTimeout(()=>button.textContent=old,1500);
-  }catch(e){prompt('コピーしてください',text)}
-}
-</script>
+<h1>Ein Bridge Publisher RC5</h1>
+<div class="ok"><strong>固定した構成：</strong> Xserverはそのまま。Cloudflare Pagesを入口にし、既存WorkerとDurable Objectsを内部接続します。</div>
+<h2>今回、変更しないもの</h2>
+<ul><li>Xserverのネームサーバー</li><li>既存サイト</li><li>メールのMX・SPF・DKIM</li><li>現在のWorkerとDurable Objects</li></ul>
+<h2>追加するもの</h2>
+<pre>GitHub /gateway
+  ↓ 自動デプロイ
+Cloudflare Pages
+  ↓ Service Binding
+既存Worker</pre>
+<h2>最終URL</h2>
+<ul><li><code>https://publisher.ein-8.com</code></li><li><code>https://docs.ein-8.com/p/資料名</code></li></ul>
+<div class="no"><strong>しないこと：</strong> Cloudflareへ <code>ein-8.com</code> をDNSゾーンとして追加しない。Xserverのネームサーバーを変更しない。</div>
+<h2>次の操作</h2>
+<p><code>DEPLOY_CHECKLIST.md</code> の順番だけで進めます。</p>
 </body>
 </html>

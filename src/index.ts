@@ -77,6 +77,24 @@ const ADMIN_CSP = [
   "frame-src 'self' data: blob: https://accounts.google.com/"
 ].join("; ");
 
+
+let sessionSecretCache: string | null = null;
+
+async function sessionSecret(env: Env): Promise<string> {
+  if (env.SESSION_SECRET && env.SESSION_SECRET.length >= 64) return env.SESSION_SECRET;
+  if (sessionSecretCache) return sessionSecretCache;
+  const response = await catalogStub(env).fetch("http://catalog/secret/session");
+  if (!response.ok) throw new Error("SESSION_SECRET_UNAVAILABLE");
+  const payload = await response.json<{ value?: string }>();
+  if (!payload.value || payload.value.length < 64) throw new Error("SESSION_SECRET_INVALID");
+  sessionSecretCache = payload.value;
+  return payload.value;
+}
+
+function isSingleOriginHost(host: string): boolean {
+  return host === "localhost" || host === "127.0.0.1" || host.endsWith(".workers.dev");
+}
+
 function secureHeaders(headers: Headers, csp?: string): void {
   headers.set("x-content-type-options", "nosniff");
   headers.set("referrer-policy", "no-referrer");
@@ -144,14 +162,14 @@ async function audit(env: Env, entry: {
 }
 
 async function requireSession(request: Request, env: Env): Promise<ReturnType<typeof sessionFromRequest> extends Promise<infer T> ? T : never> {
-  return sessionFromRequest(request, env);
+  return sessionFromRequest(request, env, await sessionSecret(env));
 }
 
 function isMutating(request: Request): boolean {
   return !["GET", "HEAD", "OPTIONS"].includes(request.method.toUpperCase());
 }
 
-async function handleAdmin(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+async function handleAdmin(request: Request, env: Env, ctx: ExecutionContext, publicOrigin: string): Promise<Response> {
   const url = new URL(request.url);
 
   if (request.method === "GET" && url.pathname === "/") {
@@ -163,7 +181,7 @@ async function handleAdmin(request: Request, env: Env, ctx: ExecutionContext): P
     });
     secureHeaders(headers, ADMIN_CSP);
     if (csrf.cookie) headers.append("set-cookie", csrf.cookie);
-    return html(adminPage(env), 200, headers);
+    return html(adminPage(env, publicOrigin), 200, headers);
   }
 
   if (request.method === "GET" && url.pathname === "/styles.css") {
@@ -179,14 +197,13 @@ async function handleAdmin(request: Request, env: Env, ctx: ExecutionContext): P
   }
 
   if (request.method === "POST" && url.pathname === "/auth/google") {
-    if (!verifyAdminOrigin(request, env) || !verifyCsrf(request)) return json({ error: "CSRF_FAILED" }, 403);
-    if (!env.SESSION_SECRET || env.SESSION_SECRET.length < 64) return json({ error: "SESSION_SECRET_NOT_CONFIGURED" }, 500);
+    if (!verifyAdminOrigin(request) || !verifyCsrf(request)) return json({ error: "CSRF_FAILED" }, 403);
     try {
       const body = await readJson<{ credential?: string }>(request);
       if (!body.credential) return json({ error: "GOOGLE_CREDENTIAL_REQUIRED" }, 400);
       const claims = await verifyGoogleIdToken(body.credential, env);
       const csrf = request.headers.get("x-csrf-token")!;
-      const token = await createSession({ sub: claims.sub!, email: claims.email!, csrf }, env.SESSION_SECRET);
+      const token = await createSession({ sub: claims.sub!, email: claims.email!, csrf }, await sessionSecret(env));
       const headers = new Headers();
       for (const cookie of sessionCookies(token, csrf)) headers.append("set-cookie", cookie);
       ctx.waitUntil(audit(env, { action: "login", actor: claims.sub!, detail: claims.email, requestId: requestId(request) }));
@@ -201,7 +218,7 @@ async function handleAdmin(request: Request, env: Env, ctx: ExecutionContext): P
   if (request.method === "POST" && url.pathname === "/auth/logout") {
     const session = await requireSession(request, env);
     if (!session) return json({ error: "UNAUTHORIZED" }, 401);
-    if (!verifyAdminOrigin(request, env) || !verifyCsrf(request, session)) return json({ error: "CSRF_FAILED" }, 403);
+    if (!verifyAdminOrigin(request) || !verifyCsrf(request, session)) return json({ error: "CSRF_FAILED" }, 403);
     const headers = new Headers();
     for (const cookie of clearSessionCookies()) headers.append("set-cookie", cookie);
     ctx.waitUntil(audit(env, { action: "logout", actor: session.sub, requestId: requestId(request) }));
@@ -212,7 +229,7 @@ async function handleAdmin(request: Request, env: Env, ctx: ExecutionContext): P
 
   const session = await requireSession(request, env);
   if (!session) return json({ error: "UNAUTHORIZED" }, 401);
-  if (isMutating(request) && (!verifyAdminOrigin(request, env) || !verifyCsrf(request, session))) {
+  if (isMutating(request) && (!verifyAdminOrigin(request) || !verifyCsrf(request, session))) {
     return json({ error: "CSRF_FAILED" }, 403);
   }
 
@@ -401,16 +418,28 @@ export default {
 
     if (url.pathname === "/health") {
       const configured = Boolean(
-        env.ADMIN_HOST && env.PUBLIC_HOST && env.ADMIN_EMAIL &&
-        env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_ID !== "REPLACE_DURING_DEPLOY" &&
-        env.SESSION_SECRET && env.SESSION_SECRET.length >= 64
+        env.ADMIN_EMAIL && env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_ID !== "REPLACE_DURING_DEPLOY"
       );
-      return json({ ok: true, configured, adminHost: env.ADMIN_HOST, publicHost: env.PUBLIC_HOST });
+      return json({
+        ok: true,
+        configured,
+        runtimeMode: isSingleOriginHost(host) ? "single-origin" : "custom-domains",
+        adminHost: env.ADMIN_HOST,
+        publicHost: env.PUBLIC_HOST,
+        sessionKey: env.SESSION_SECRET && env.SESSION_SECRET.length >= 64 ? "environment" : "durable-object"
+      });
     }
 
     try {
-      if (host === env.ADMIN_HOST.toLowerCase()) return handleAdmin(request, env, ctx);
-      if (host === env.PUBLIC_HOST.toLowerCase()) return handlePublic(request, env);
+      const adminHost = (env.ADMIN_HOST ?? "").toLowerCase();
+      const publicHost = (env.PUBLIC_HOST ?? "").toLowerCase();
+      if (host === adminHost) return handleAdmin(request, env, ctx, `https://${env.PUBLIC_HOST}`);
+      if (host === publicHost) return handlePublic(request, env);
+
+      if (isSingleOriginHost(host)) {
+        if (url.pathname.startsWith("/p/")) return handlePublic(request, env);
+        return handleAdmin(request, env, ctx, url.origin);
+      }
 
       const headers = new Headers({ "cache-control": "no-store" });
       secureHeaders(headers, "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'");

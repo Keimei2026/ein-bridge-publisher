@@ -7,16 +7,32 @@
     "ADMIN_EMAIL": "koube201@gmail.com",
     "ADMIN_HOST": "publisher.ein-8.com",
     "PUBLIC_HOST": "docs.ein-8.com",
-    "GOOGLE_CLIENT_ID": "REPLACE_DURING_DEPLOY"
+    "GOOGLE_CLIENT_ID": "464417267380-ts43evsbcrrt9hs39iefseg4ftie7l9g.apps.googleusercontent.com"
   },
   "durable_objects": {
     "bindings": [
-      { "name": "CATALOG", "class_name": "CatalogDO" },
-      { "name": "SITES", "class_name": "SiteDO" }
+      {
+        "name": "CATALOG",
+        "class_name": "CatalogDO"
+      },
+      {
+        "name": "SITES",
+        "class_name": "SiteDO"
+      }
     ]
   },
   "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["CatalogDO", "SiteDO"] }
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "CatalogDO",
+        "SiteDO"
+      ]
+    }
   ],
-  "observability": { "enabled": true }
+  "observability": {
+    "enabled": true
+  },
+  "workers_dev": true,
+  "preview_urls": true
 }

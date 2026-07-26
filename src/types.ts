@@ -7,7 +7,7 @@ export interface Env {
   ADMIN_HOST: string;
   PUBLIC_HOST: string;
   GOOGLE_CLIENT_ID: string;
-  SESSION_SECRET: string;
+  SESSION_SECRET?: string;
 }
 
 export interface SiteSummary {

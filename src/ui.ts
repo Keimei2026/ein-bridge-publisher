@@ -1,7 +1,7 @@
 import type { Env, PublicationMode } from "./types";
 import { escapeHtml } from "./utils";
 
-export function adminPage(env: Env): string {
+export function adminPage(env: Env, publicOrigin: string): string {
   return `<!doctype html>
 <html lang="ja">
 <head>
@@ -12,7 +12,7 @@ export function adminPage(env: Env): string {
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="/admin.js" defer></script>
 </head>
-<body data-google-client-id="${escapeHtml(env.GOOGLE_CLIENT_ID)}" data-public-origin="https://${escapeHtml(env.PUBLIC_HOST)}">
+<body data-google-client-id="${escapeHtml(env.GOOGLE_CLIENT_ID)}" data-public-origin="${escapeHtml(publicOrigin)}">
   <header class="topbar">
     <div>
       <p class="eyebrow">EIN BRIDGE</p>
@@ -89,7 +89,7 @@ export function adminPage(env: Env): string {
 }
 
 export function setupPage(env: Env, currentHost: string): string {
-  return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ein Bridge Publisher Setup</title><style>${minimalCss()}</style></head><body><main class="setup"><h1>Ein Bridge Publisher</h1><p>Workerは起動しています。次にCloudflareで2つのカスタムドメインを接続してください。</p><ol><li><code>${escapeHtml(env.ADMIN_HOST)}</code> をこのWorkerへ接続</li><li><code>${escapeHtml(env.PUBLIC_HOST)}</code> をこのWorkerへ接続</li><li>Google OAuthのAuthorized JavaScript originに <code>https://${escapeHtml(env.ADMIN_HOST)}</code> を登録</li></ol><p>現在アクセス中のホスト：<code>${escapeHtml(currentHost)}</code></p><p><a href="/health">稼働確認</a></p></main></body></html>`;
+  return `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ein Bridge Publisher Setup</title><style>${minimalCss()}</style></head><body><main class="setup"><h1>Ein Bridge Publisher</h1><p>Workerは起動していますが、このホストは管理画面または公開画面として登録されていません。</p><p>現在アクセス中のホスト：<code>${escapeHtml(currentHost)}</code></p><p>設定済み候補：<code>${escapeHtml(env.ADMIN_HOST)}</code> / <code>${escapeHtml(env.PUBLIC_HOST)}</code></p><p><a href="/health">稼働確認</a></p></main></body></html>`;
 }
 
 export function publicWrapper(title: string, contentPath: string, mode: PublicationMode): string {
