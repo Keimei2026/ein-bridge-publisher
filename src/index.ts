@@ -15,7 +15,6 @@ import {
   adminCss,
   adminJs,
   adminPage,
-  publicWrapper,
   setupPage
 } from "./ui";
 import {
@@ -361,18 +360,23 @@ async function handlePublic(request: Request, env: Env): Promise<Response> {
     const site = metaPayload.site;
     if (site.deletedAt || !site.currentRevision) return text("このページは公開されていません。", 404);
 
-    const revisionResponse = await siteStub(env, slug).fetch(
-      `http://site/revision-meta/${encodeURIComponent(site.currentRevision)}`
+    // 公開URLから保存済みHTMLを直接返す。iframeを挟まないため、
+    // URLは /p/<slug> のまま保たれ、ブラウザ互換性の問題も起きにくい。
+    const response = await siteStub(env, slug).fetch(
+      `http://site/revision/${encodeURIComponent(site.currentRevision)}`
     );
-    if (!revisionResponse.ok) return text("このページは存在しません。", 404);
-    const revisionPayload = await revisionResponse.json<{ revision: { title: string; mode: PublicationMode } }>();
-    const contentPath = `/p/${encodeURIComponent(slug)}/content/${encodeURIComponent(site.currentRevision)}`;
-    const headers = new Headers({
-      "cache-control": "no-store",
-      "cross-origin-resource-policy": "same-origin"
-    });
-    secureHeaders(headers, "default-src 'none'; frame-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'");
-    return html(publicWrapper(revisionPayload.revision.title, contentPath, revisionPayload.revision.mode), 200, headers);
+    if (!response.ok) return response;
+    const mode = response.headers.get("x-revision-mode") === "interactive" ? "interactive" : "static";
+    const headers = new Headers(response.headers);
+    headers.delete("x-revision-title");
+    headers.delete("x-revision-mode");
+    headers.delete("x-revision-id");
+    headers.delete("x-revision-size");
+    headers.set("cache-control", "no-store");
+    headers.set("content-disposition", "inline");
+    headers.set("cross-origin-resource-policy", "same-origin");
+    secureHeaders(headers, mode === "interactive" ? INTERACTIVE_CSP : STATIC_CSP);
+    return new Response(response.body, { status: 200, headers });
   }
 
   // RC5以前の版固有URLを開いた場合も、利用者には安定した公開URLを表示する。
