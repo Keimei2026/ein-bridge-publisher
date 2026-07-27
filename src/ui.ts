@@ -51,9 +51,15 @@ export function adminPage(env: Env, publicOrigin: string): string {
           <label class="choice"><input type="radio" name="mode" value="static" checked> 静的資料モード（JavaScript禁止）</label>
           <label class="choice"><input type="radio" name="mode" value="interactive"> インタラクティブモード（日英切替など）</label>
         </fieldset>
-        <label class="file-picker">HTMLファイル
-          <input id="fileInput" type="file" accept=".html,text/html">
-        </label>
+        <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-label="HTMLファイルを選択またはドロップ">
+          <input id="fileInput" class="file-input" type="file" accept=".html,text/html">
+          <div class="drop-icon" aria-hidden="true">＋</div>
+          <div>
+            <strong>HTMLをここへドラッグ＆ドロップ</strong>
+            <span class="drop-sub">またはクリックしてファイルを選択</span>
+            <span id="fileSummary" class="file-summary">まだ選択されていません</span>
+          </div>
+        </div>
         <div class="actions">
           <button id="previewButton" class="button secondary" type="button">プレビュー</button>
           <button id="publishButton" class="button primary" type="button">公開する</button>
@@ -103,11 +109,11 @@ export function adminCss(): string {
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:linear-gradient(160deg,#f7fafb,#edf3f5)}
 button,input{font:inherit}.hidden{display:none!important}.topbar{display:flex;justify-content:space-between;align-items:center;padding:22px clamp(18px,4vw,48px);background:#17324d;color:#fff;box-shadow:0 8px 25px #17324d2b}.topbar h1{margin:0;font-size:clamp(26px,4vw,40px)}.eyebrow{margin:0 0 2px;font-size:12px;letter-spacing:.18em;font-weight:800;color:#6a889d}.topbar .eyebrow{color:#bcd0dc}
 .shell{max-width:980px;margin:0 auto;padding:24px 16px 60px}.card{background:#fff;border:1px solid #dbe4e9;border-radius:20px;padding:clamp(18px,4vw,30px);margin-bottom:20px;box-shadow:0 12px 35px #17324d0d}.login-card{max-width:540px;margin:60px auto}.card h2{margin:0;font-size:clamp(22px,3vw,30px)}.section-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:20px}.badge{background:#eaf2f5;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:800;color:#355a70}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}label,legend{font-weight:750}input[type=text],input:not([type]){width:100%;margin-top:6px;border:1px solid #b8c8d2;border-radius:11px;padding:12px;background:#fff}input:focus{outline:3px solid #9cc9df66;border-color:#4e91b4}fieldset{border:1px solid #d4e0e6;border-radius:12px;margin:18px 0;padding:14px}.choice{display:block;font-weight:600;margin:7px 0}.file-picker{display:block;border:1px dashed #8ba7b7;background:#f7fafb;border-radius:13px;padding:16px}.file-picker input{display:block;margin-top:8px;max-width:100%}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}label,legend{font-weight:750}input[type=text],input:not([type]){width:100%;margin-top:6px;border:1px solid #b8c8d2;border-radius:11px;padding:12px;background:#fff}input:focus{outline:3px solid #9cc9df66;border-color:#4e91b4}fieldset{border:1px solid #d4e0e6;border-radius:12px;margin:18px 0;padding:14px}.choice{display:block;font-weight:600;margin:7px 0}.drop-zone{display:flex;align-items:center;gap:14px;border:2px dashed #8ba7b7;background:#f7fafb;border-radius:15px;padding:20px;cursor:pointer;transition:.18s ease}.drop-zone:hover,.drop-zone:focus-visible,.drop-zone.dragover{border-color:#176a8d;background:#edf7fa;outline:none;box-shadow:0 0 0 4px #76b5d326}.drop-icon{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border-radius:50%;background:#e4f0f4;color:#176a8d;font-size:28px;font-weight:500}.drop-zone strong{display:block}.drop-sub,.file-summary{display:block;font-size:13px;color:#637585;margin-top:2px}.file-summary.selected{color:#176b4b;font-weight:750}.file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.button{border:0;border-radius:10px;padding:11px 16px;font-weight:800;cursor:pointer}.button:disabled{opacity:.55;cursor:wait}.primary{background:#176a8d;color:#fff}.secondary{background:#e8f1f4;color:#17324d}.ghost{background:transparent;border:1px solid currentColor;color:inherit}.danger{background:#fff0f0;color:#a32b2b}.message{min-height:1.4em;margin:14px 0 0;white-space:pre-wrap}.message.error{color:#a32b2b}.message.success{color:#176b4b}
-.progress-wrap{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:14px}progress{width:100%;height:14px}.site-list{display:grid;gap:12px}.site-card{border:1px solid #dbe4e9;border-radius:14px;padding:16px}.site-card.deleted{background:#faf7f7;opacity:.8}.site-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.site-card h3{margin:0 0 4px}.meta{font-size:13px;color:#637585}.url{font-size:13px;word-break:break-all;color:#176a8d}.site-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.small-button{border:0;border-radius:8px;padding:8px 10px;font-weight:750;cursor:pointer;background:#edf3f5;color:#1e4056}.small-button.danger{background:#fff0f0;color:#a32b2b}
+.progress-wrap{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:14px}progress{width:100%;height:14px}.site-list{display:grid;gap:14px}.site-card{border:1px solid #dbe4e9;border-radius:16px;padding:14px}.site-card.deleted{background:#faf7f7;opacity:.8}.site-card-grid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;align-items:start}.site-thumb{position:relative;display:block;width:100%;aspect-ratio:16/10;overflow:hidden;border:1px solid #cfdce3;border-radius:11px;background:linear-gradient(135deg,#edf3f6,#fff);box-shadow:0 6px 18px #17324d12}.site-thumb-frame{position:absolute;inset:0;width:400%;height:400%;border:0;transform:scale(.25);transform-origin:top left;pointer-events:none;background:#fff}.site-thumb::after{content:"開く";position:absolute;right:8px;bottom:8px;padding:4px 8px;border-radius:999px;background:#17324dcc;color:#fff;font-size:11px;font-weight:800;opacity:0;transition:.15s}.site-thumb:hover::after,.site-thumb:focus-visible::after{opacity:1}.site-thumb-placeholder{display:grid;place-items:center;width:100%;aspect-ratio:16/10;border:1px dashed #c8d2d8;border-radius:11px;color:#7c8d98;background:#f5f6f7;font-weight:750}.site-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.site-card h3{margin:0 0 4px}.meta{font-size:13px;color:#637585}.url{font-size:13px;word-break:break-all;color:#176a8d}.site-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.small-button{border:0;border-radius:8px;padding:8px 10px;font-weight:750;cursor:pointer;background:#edf3f5;color:#1e4056}.small-button.danger{background:#fff0f0;color:#a32b2b}
 .dialog{border:0;border-radius:18px;padding:0;box-shadow:0 22px 70px #13283b55;max-width:min(720px,94vw);width:100%}.dialog::backdrop{background:#15283b99}.dialog.wide{max-width:96vw;width:1100px;height:92vh}.dialog-head{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-bottom:1px solid #dbe4e9}.dialog-head h2{margin:0}.icon-button{border:0;background:transparent;font-size:28px;cursor:pointer}.dialog iframe{width:100%;height:calc(92vh - 64px);border:0}.history-item{padding:14px 18px;border-bottom:1px solid #e2e8ec}.history-item.current{background:#eef7f2}
-@media(max-width:650px){.form-grid{grid-template-columns:1fr}.site-row{display:block}.topbar{padding:18px}.shell{padding:16px 12px 40px}.card{border-radius:15px}.button{flex:1}.site-actions .small-button{flex:1}}
+@media(max-width:700px){.form-grid{grid-template-columns:1fr}.site-card-grid{grid-template-columns:1fr}.site-thumb{max-width:none}.site-row{display:block}.topbar{padding:18px}.shell{padding:16px 12px 40px}.card{border-radius:15px}.button{flex:1}.site-actions .small-button{flex:1}.drop-zone{align-items:flex-start}}
 `;
 }
 
@@ -123,6 +129,7 @@ export function adminJs(): string {
   const clientId = body.dataset.googleClientId;
   const publicOrigin = body.dataset.publicOrigin;
   let currentUser = null;
+  let selectedFile = null;
 
   function cookie(name) {
     const found = document.cookie.split(';').map(v => v.trim()).find(v => v.startsWith(name + '='));
@@ -153,6 +160,42 @@ export function adminJs(): string {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
+  function slugFromFilename(filename) {
+    const base = filename.replace(/\.html?$/i, '').normalize('NFKC').toLowerCase();
+    const slug = base.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').replace(/-+/g, '-').slice(0, 64);
+    if (slug) return slug;
+    const now = new Date();
+    const pad = value => String(value).padStart(2, '0');
+    return 'document-' + String(now.getFullYear()).slice(-2) + pad(now.getMonth() + 1) + pad(now.getDate()) + '-' + pad(now.getHours()) + pad(now.getMinutes());
+  }
+
+  async function selectFile(file) {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.html')) return setMessage('.htmlファイルを選択してください。', 'error');
+    if (file.size <= 0 || file.size > 5 * 1024 * 1024) return setMessage('HTMLは5MB以内にしてください。', 'error');
+    try {
+      const source = new TextDecoder('utf-8', {fatal:true}).decode(await file.arrayBuffer());
+      selectedFile = file;
+      const parsed = new DOMParser().parseFromString(source, 'text/html');
+      const detectedTitle = (parsed.querySelector('title')?.textContent || '').trim();
+      if (!$('titleInput').value.trim()) $('titleInput').value = detectedTitle || file.name.replace(/\.html?$/i, '');
+      if (!$('slugInput').value.trim()) $('slugInput').value = slugFromFilename(file.name);
+      $('fileSummary').textContent = file.name + '（' + humanBytes(file.size) + '）';
+      $('fileSummary').classList.add('selected');
+      setMessage('HTMLを選択しました。内容を確認して「公開する」を押してください。', 'success');
+    } catch {
+      selectedFile = null;
+      setMessage('UTF-8のHTMLファイルではありません。UTF-8で保存し直してください。', 'error');
+    }
+  }
+
+  function clearSelectedFile() {
+    selectedFile = null;
+    $('fileInput').value = '';
+    $('fileSummary').textContent = 'まだ選択されていません';
+    $('fileSummary').classList.remove('selected');
   }
 
   function escapeHtml(value) {
@@ -217,7 +260,10 @@ export function adminJs(): string {
     list.innerHTML = result.sites.map(site => {
       const url = publicOrigin + '/p/' + encodeURIComponent(site.slug);
       const deleted = Boolean(site.deletedAt);
-      return '<article class="site-card' + (deleted ? ' deleted' : '') + '">' +
+      const thumb = deleted
+        ? '<div class="site-thumb-placeholder">削除済み</div>'
+        : '<a class="site-thumb" href="' + url + '" target="_blank" rel="noopener" aria-label="' + escapeHtml(site.title) + 'を開く"><iframe class="site-thumb-frame" loading="lazy" sandbox="" tabindex="-1" title="" src="' + url + '"></iframe></a>';
+      return '<article class="site-card' + (deleted ? ' deleted' : '') + '"><div class="site-card-grid">' + thumb + '<div>' +
         '<div class="site-row"><div><h3>' + escapeHtml(site.title) + '</h3>' +
         '<div class="meta">' + escapeHtml(site.slug) + '・' + (site.mode === 'interactive' ? 'インタラクティブ' : '静的') + '・' + humanBytes(site.byteSize) + '</div>' +
         '<div class="meta">更新 ' + new Date(site.updatedAt).toLocaleString() + (deleted ? '・削除済み' : '') + '</div>' +
@@ -225,12 +271,12 @@ export function adminJs(): string {
         '<div class="site-actions">' +
         (!deleted ? '<button class="small-button" data-action="copy" data-slug="' + escapeHtml(site.slug) + '">URLコピー</button><button class="small-button" data-action="share" data-slug="' + escapeHtml(site.slug) + '" data-title="' + escapeHtml(site.title) + '">共有</button><button class="small-button" data-action="history" data-slug="' + escapeHtml(site.slug) + '">履歴</button><button class="small-button danger" data-action="delete" data-slug="' + escapeHtml(site.slug) + '">削除</button>' :
         '<button class="small-button" data-action="restore" data-slug="' + escapeHtml(site.slug) + '">復元</button>') +
-        '</div></article>';
+        '</div></div></div></article>';
     }).join('');
   }
 
   async function publish() {
-    const file = $('fileInput').files[0];
+    const file = selectedFile || $('fileInput').files[0];
     const title = $('titleInput').value.trim();
     const slug = $('slugInput').value.trim().toLowerCase();
     const mode = document.querySelector('input[name="mode"]:checked').value;
@@ -283,6 +329,9 @@ export function adminJs(): string {
       const url = publicOrigin + '/p/' + slug;
       setMessage('公開しました。\n' + url + (result.warning ? '\n※一覧同期を再試行しています。' : ''), 'success');
       await navigator.clipboard.writeText(url).catch(() => {});
+      clearSelectedFile();
+      $('titleInput').value = '';
+      $('slugInput').value = '';
       await loadSites();
     } catch (error) {
       setMessage('公開できませんでした: ' + error.message, 'error');
@@ -292,7 +341,7 @@ export function adminJs(): string {
   }
 
   async function preview() {
-    const file = $('fileInput').files[0];
+    const file = selectedFile || $('fileInput').files[0];
     if (!file) return setMessage('先にHTMLファイルを選択してください。', 'error');
     if (file.size <= 0 || file.size > 5 * 1024 * 1024) return setMessage('HTMLは5MB以内にしてください。', 'error');
     if (!file.name.toLowerCase().endsWith('.html')) return setMessage('.htmlファイルを選択してください。', 'error');
@@ -318,6 +367,22 @@ export function adminJs(): string {
     ).join('');
     $('historyDialog').showModal();
   }
+
+  const dropZone = $('dropZone');
+  dropZone.addEventListener('click', event => { if (event.target !== $('fileInput')) $('fileInput').click(); });
+  dropZone.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); $('fileInput').click(); }
+  });
+  $('fileInput').addEventListener('change', event => selectFile(event.target.files?.[0]));
+  ['dragenter','dragover'].forEach(type => dropZone.addEventListener(type, event => {
+    event.preventDefault(); event.stopPropagation(); dropZone.classList.add('dragover');
+  }));
+  ['dragleave','drop'].forEach(type => dropZone.addEventListener(type, event => {
+    event.preventDefault(); event.stopPropagation(); dropZone.classList.remove('dragover');
+  }));
+  dropZone.addEventListener('drop', event => selectFile(event.dataTransfer?.files?.[0]));
+  window.addEventListener('dragover', event => event.preventDefault());
+  window.addEventListener('drop', event => event.preventDefault());
 
   $('publishButton').addEventListener('click', publish);
   $('previewButton').addEventListener('click', preview);

@@ -29,52 +29,41 @@ import {
 
 export { CatalogDO, SiteDO };
 
-const STATIC_CSP = [
-  "default-src 'none'",
-  "base-uri 'none'",
-  "form-action 'none'",
-  "frame-ancestors 'self'",
-  "script-src 'none'",
-  "style-src 'unsafe-inline'",
-  "img-src data: blob:",
-  "font-src data:",
-  "connect-src 'none'",
-  "media-src data: blob:",
-  "object-src 'none'",
-  "frame-src 'none'",
-  "worker-src 'none'",
-  "sandbox"
-].join("; ");
+function publicCsp(mode: PublicationMode, adminHost: string): string {
+  const frameAncestor = adminHost ? `https://${adminHost}` : "'none'";
+  const directives = [
+    "default-src 'none'",
+    "base-uri 'none'",
+    "form-action 'none'",
+    `frame-ancestors 'self' ${frameAncestor}`,
+    mode === "interactive" ? "script-src 'unsafe-inline'" : "script-src 'none'",
+    "style-src 'unsafe-inline'",
+    "img-src data: blob:",
+    "font-src data:",
+    "connect-src 'none'",
+    "media-src data: blob:",
+    "object-src 'none'",
+    "frame-src 'none'",
+    "worker-src 'none'",
+    mode === "interactive" ? "sandbox allow-scripts" : "sandbox"
+  ];
+  return directives.join("; ");
+}
 
-const INTERACTIVE_CSP = [
-  "default-src 'none'",
-  "base-uri 'none'",
-  "form-action 'none'",
-  "frame-ancestors 'self'",
-  "script-src 'unsafe-inline'",
-  "style-src 'unsafe-inline'",
-  "img-src data: blob:",
-  "font-src data:",
-  "connect-src 'none'",
-  "media-src data: blob:",
-  "object-src 'none'",
-  "frame-src 'none'",
-  "worker-src 'none'",
-  "sandbox allow-scripts"
-].join("; ");
-
-const ADMIN_CSP = [
-  "default-src 'none'",
-  "base-uri 'none'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "script-src 'self' https://accounts.google.com/gsi/client",
-  "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style",
-  "img-src 'self' data: https://*.googleusercontent.com",
-  "font-src 'self'",
-  "connect-src 'self' https://accounts.google.com/gsi/",
-  "frame-src 'self' data: blob: https://accounts.google.com/"
-].join("; ");
+function adminCsp(publicOrigin: string): string {
+  return [
+    "default-src 'none'",
+    "base-uri 'none'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "script-src 'self' https://accounts.google.com/gsi/client",
+    "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style",
+    "img-src 'self' data: https://*.googleusercontent.com",
+    "font-src 'self'",
+    "connect-src 'self' https://accounts.google.com/gsi/",
+    `frame-src 'self' data: blob: https://accounts.google.com/ ${publicOrigin}`
+  ].join("; ");
+}
 
 
 let sessionSecretCache: string | null = null;
@@ -178,7 +167,7 @@ async function handleAdmin(request: Request, env: Env, ctx: ExecutionContext, pu
       "cross-origin-opener-policy": "same-origin-allow-popups",
       "cross-origin-resource-policy": "same-origin"
     });
-    secureHeaders(headers, ADMIN_CSP);
+    secureHeaders(headers, adminCsp(publicOrigin));
     if (csrf.cookie) headers.append("set-cookie", csrf.cookie);
     return html(adminPage(env, publicOrigin), 200, headers);
   }
@@ -374,8 +363,8 @@ async function handlePublic(request: Request, env: Env): Promise<Response> {
     headers.delete("x-revision-size");
     headers.set("cache-control", "no-store");
     headers.set("content-disposition", "inline");
-    headers.set("cross-origin-resource-policy", "same-origin");
-    secureHeaders(headers, mode === "interactive" ? INTERACTIVE_CSP : STATIC_CSP);
+    headers.set("cross-origin-resource-policy", "cross-origin");
+    secureHeaders(headers, publicCsp(mode, env.ADMIN_HOST));
     return new Response(response.body, { status: 200, headers });
   }
 
@@ -406,8 +395,8 @@ async function handlePublic(request: Request, env: Env): Promise<Response> {
     headers.delete("x-revision-id");
     headers.delete("x-revision-size");
     headers.set("cache-control", "public,max-age=31536000,immutable");
-    headers.set("cross-origin-resource-policy", "same-origin");
-    secureHeaders(headers, mode === "interactive" ? INTERACTIVE_CSP : STATIC_CSP);
+    headers.set("cross-origin-resource-policy", "cross-origin");
+    secureHeaders(headers, publicCsp(mode, env.ADMIN_HOST));
     return new Response(response.body, { status: 200, headers });
   }
 
