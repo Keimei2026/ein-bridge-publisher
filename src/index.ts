@@ -34,7 +34,7 @@ const STATIC_CSP = [
   "default-src 'none'",
   "base-uri 'none'",
   "form-action 'none'",
-  "frame-ancestors 'none'",
+  "frame-ancestors 'self'",
   "script-src 'none'",
   "style-src 'unsafe-inline'",
   "img-src data: blob:",
@@ -51,7 +51,7 @@ const INTERACTIVE_CSP = [
   "default-src 'none'",
   "base-uri 'none'",
   "form-action 'none'",
-  "frame-ancestors 'none'",
+  "frame-ancestors 'self'",
   "script-src 'unsafe-inline'",
   "style-src 'unsafe-inline'",
   "img-src data: blob:",
@@ -360,30 +360,29 @@ async function handlePublic(request: Request, env: Env): Promise<Response> {
     const metaPayload = await metaResponse.json<{ site: SiteSummary }>();
     const site = metaPayload.site;
     if (site.deletedAt || !site.currentRevision) return text("このページは公開されていません。", 404);
-    const location = `/p/${encodeURIComponent(slug)}/r/${encodeURIComponent(site.currentRevision)}`;
-    const headers = new Headers({ location, "cache-control": "no-store" });
-    secureHeaders(headers);
-    return new Response(null, { status: 302, headers });
-  }
 
-  const revisionPage = url.pathname.match(/^\/p\/([a-z0-9-]+)\/r\/([^/]+)\/?$/);
-  if (request.method === "GET" && revisionPage) {
-    const slug = revisionPage[1]!;
-    const revisionId = decodeURIComponent(revisionPage[2]!);
-    const metaResponse = await siteStub(env, slug).fetch("http://site/meta");
-    if (!metaResponse.ok) return text("このページは存在しません。", 404);
-    const metaPayload = await metaResponse.json<{ site: SiteSummary }>();
-    if (metaPayload.site.deletedAt) return text("このページは公開されていません。", 404);
-    const revisionResponse = await siteStub(env, slug).fetch(`http://site/revision-meta/${encodeURIComponent(revisionId)}`);
+    const revisionResponse = await siteStub(env, slug).fetch(
+      `http://site/revision-meta/${encodeURIComponent(site.currentRevision)}`
+    );
     if (!revisionResponse.ok) return text("このページは存在しません。", 404);
     const revisionPayload = await revisionResponse.json<{ revision: { title: string; mode: PublicationMode } }>();
-    const contentPath = `/p/${encodeURIComponent(slug)}/content/${encodeURIComponent(revisionId)}`;
+    const contentPath = `/p/${encodeURIComponent(slug)}/content/${encodeURIComponent(site.currentRevision)}`;
     const headers = new Headers({
-      "cache-control": "public,max-age=31536000,immutable",
+      "cache-control": "no-store",
       "cross-origin-resource-policy": "same-origin"
     });
     secureHeaders(headers, "default-src 'none'; frame-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'");
     return html(publicWrapper(revisionPayload.revision.title, contentPath, revisionPayload.revision.mode), 200, headers);
+  }
+
+  // RC5以前の版固有URLを開いた場合も、利用者には安定した公開URLを表示する。
+  const revisionPage = url.pathname.match(/^\/p\/([a-z0-9-]+)\/r\/([^/]+)\/?$/);
+  if (request.method === "GET" && revisionPage) {
+    const slug = revisionPage[1]!;
+    const location = `/p/${encodeURIComponent(slug)}`;
+    const headers = new Headers({ location, "cache-control": "no-store" });
+    secureHeaders(headers);
+    return new Response(null, { status: 302, headers });
   }
 
   const content = url.pathname.match(/^\/p\/([a-z0-9-]+)\/content\/([^/]+)$/);
